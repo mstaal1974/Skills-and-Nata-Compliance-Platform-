@@ -2,8 +2,7 @@ import React, { createContext, useState, ReactNode, useMemo } from 'react';
 import { 
   Skill, RichSkill, Occupation, Person, IssuedBadge, 
   ComputedBadge, BadgeStatus, Department, EscoSkill, Competency, Evidence,
-  Course, DevelopmentPlan, OpenBadge, DevelopmentPlanCourse, GapAnalysisResult, CoursePriority,
-  ProjectAnalysisResult
+  Course, DevelopmentPlan, OpenBadge, DevelopmentPlanCourse, GapAnalysisResult, CoursePriority
 } from '../types';
 import { initializeData } from '../data/mockData';
 
@@ -23,6 +22,7 @@ interface DataContextState {
   courses: Course[];
   developmentPlans: DevelopmentPlan[];
   openBadges: OpenBadge[];
+  productivityBenchmarks: Record<string, number>;
   matrixSkills: Skill[];
   complianceMatrix: ComputedBadge[][];
   addPerson: (personData: Omit<Person, 'person_id'>) => void;
@@ -41,16 +41,17 @@ interface DataContextState {
   autoCreateDevelopmentPlan: (personId: number) => { createdCourses: number };
   analyzeJobDescriptionForGaps: (jobDescriptionText: string, personId: number) => GapAnalysisResult | null;
   extractSkillsFromPlan: (planText: string) => Skill[];
-  calculateProjectReadiness: (projectName: string, totalStaff: number, unitsPerPerson: number, skillRequirements: { skillId: number; requiredUnits: number }[]) => ProjectAnalysisResult;
+  updateProductivityBenchmarks: (newBenchmarks: Record<string, number>) => void;
 }
 
 export const DataContext = createContext<DataContextState | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [initialState] = useState(() => initializeData());
-  const { _pendingBadges, ...restOfData } = initialState;
+  const { _pendingBadges, productivityBenchmarks: initialBenchmarks, ...restOfData } = initialState;
   const [data, setData] = useState(restOfData);
   const [pendingBadges, setPendingBadges] = useState(_pendingBadges);
+  const [productivityBenchmarks, setProductivityBenchmarks] = useState(initialBenchmarks);
 
   const addPerson = (personData: Omit<Person, 'person_id'>) => {
     setData(prevData => {
@@ -364,50 +365,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return Array.from(matchedSkills.values()).sort((a,b) => a.name.localeCompare(b.name));
   };
 
-  const calculateProjectReadiness = (projectName: string, totalStaffRequired: number, unitsPerPerson: number, skillRequirements: { skillId: number; requiredUnits: number }[]): ProjectAnalysisResult => {
-    const workforceSkills = new Map<number, { count: number; totalLevel: number }>();
-    data.people.forEach(person => {
-        person.skills.forEach(pSkill => {
-            if (!workforceSkills.has(pSkill.skill_id)) {
-                workforceSkills.set(pSkill.skill_id, { count: 0, totalLevel: 0 });
-            }
-            const stat = workforceSkills.get(pSkill.skill_id)!;
-            stat.count++;
-            stat.totalLevel += pSkill.level;
-        });
-    });
-
-    let totalRequiredHeadcountSum = 0;
-    let weightedScoreSum = 0;
-    const safeUnitsPerPerson = unitsPerPerson > 0 ? unitsPerPerson : 1;
-
-    const requiredSkills = skillRequirements.map(req => {
-        const skill = data.skills.find(s => s.skill_id === req.skillId)!;
-        const stats = workforceSkills.get(req.skillId);
-        const availableCount = stats?.count || 0;
-        const headcountNeeded = Math.ceil(req.requiredUnits / safeUnitsPerPerson);
-        const gap = availableCount - headcountNeeded;
-
-        totalRequiredHeadcountSum += headcountNeeded;
-        weightedScoreSum += Math.min(availableCount, headcountNeeded);
-        
-        return {
-            skill,
-            requiredUnits: req.requiredUnits,
-            headcountNeeded,
-            availableCount,
-            gap,
-            avgProficiency: stats ? stats.totalLevel / stats.count : 0,
-        };
-    });
-
-    const readinessScore = totalRequiredHeadcountSum > 0 ? Math.round((weightedScoreSum / totalRequiredHeadcountSum) * 100) : 100;
-    const criticalGaps = requiredSkills.filter(rs => rs.availableCount === 0 && rs.headcountNeeded > 0).map(rs => rs.skill);
-    const resourceGaps = requiredSkills.filter(rs => rs.gap < 0).map(rs => ({ skill: rs.skill, gap: rs.gap }));
-    
-    return { projectName, totalStaffRequired, readinessScore, requiredSkills, criticalGaps, resourceGaps };
-  };
-
   const syncBadges = () => {
     if (pendingBadges.length === 0) return;
 
@@ -451,6 +408,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
     });
     setPendingBadges([]);
+  };
+
+  const updateProductivityBenchmarks = (newBenchmarks: Record<string, number>) => {
+    setProductivityBenchmarks(newBenchmarks);
   };
 
   const { matrixSkills, complianceMatrix } = useMemo(() => {
@@ -524,6 +485,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     ...data,
     matrixSkills,
     complianceMatrix,
+    productivityBenchmarks,
     addPerson,
     addSkillsAndOccupation,
     updateOccupation,
@@ -540,8 +502,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     autoCreateDevelopmentPlan,
     analyzeJobDescriptionForGaps,
     extractSkillsFromPlan,
-    calculateProjectReadiness,
-  }), [data, matrixSkills, complianceMatrix]);
+    updateProductivityBenchmarks,
+  }), [data, matrixSkills, complianceMatrix, productivityBenchmarks]);
 
   return (
     <DataContext.Provider value={contextValue}>

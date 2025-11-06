@@ -3,8 +3,9 @@ import { useSkillsData } from '../../hooks/useSkillsData';
 import Card from '../ui/Card';
 import NataReportPreview from '../common/NataReportPreview';
 import LerReportPreview from '../common/LerReportPreview';
+import NataAuditDossierPreview from '../common/NataAuditDossierPreview';
 
-type ExportType = 'LER Export' | 'NATA Skills Profile' | '';
+type ExportType = 'LER Export' | 'NATA Skills Profile' | 'NATA Audit Dossier' | '';
 
 const Reports: React.FC = () => {
   const { people, departments } = useSkillsData();
@@ -21,7 +22,7 @@ const Reports: React.FC = () => {
             ...departments.map(d => ({ value: `dept-${d.department_id}`, label: d.name }))
         ];
     }
-    if (exportType === 'NATA Skills Profile') {
+    if (exportType === 'NATA Skills Profile' || exportType === 'NATA Audit Dossier') {
         const technicians = people.filter(p => p.isTechnician);
         return technicians.map(p => ({ value: p.person_id.toString(), label: p.name }));
     }
@@ -54,6 +55,7 @@ const Reports: React.FC = () => {
                             <option value="" disabled>-- Select a report type --</option>
                             <option>LER Export</option>
                             <option>NATA Skills Profile</option>
+                            <option>NATA Audit Dossier</option>
                         </select>
                     </div>
                     {exportType && (
@@ -97,6 +99,8 @@ const Reports: React.FC = () => {
                         </div>
                     ) : exportType === 'NATA Skills Profile' ? (
                         <NataReportPreview technicianId={parseInt(target)} />
+                    ) : exportType === 'NATA Audit Dossier' ? (
+                        <NataAuditDossierPreview technicianId={parseInt(target)} />
                     ) : (
                         <LerReportPreview targetId={target} />
                     )}

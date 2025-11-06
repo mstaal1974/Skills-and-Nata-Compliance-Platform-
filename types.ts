@@ -87,21 +87,31 @@ export interface GapAnalysisResult {
   matchPercentage: number;
 }
 
-// Project Readiness Type
-export interface ProjectAnalysisResult {
+// --- Project Readiness & Risk Simulation Types ---
+
+export interface StaffingFTE {
+  category: string;
+  estTests: number;
+  mainTests: string;
+  staffType: string;
+  productivity: number;
+  staffRequiredFTE: number;
+}
+
+export interface ProjectRisk {
+  level: 'High' | 'Medium' | 'Low';
+  testMethod: string;
+  details: string;
+  mitigation: string;
+}
+
+export interface ProjectRiskAnalysisResult {
   projectName: string;
-  totalStaffRequired: number;
-  readinessScore: number;
-  requiredSkills: {
-    skill: Skill;
-    requiredUnits: number;
-    headcountNeeded: number;
-    availableCount: number;
-    gap: number;
-    avgProficiency: number;
-  }[];
-  criticalGaps: Skill[];
-  resourceGaps: { skill: Skill; gap: number }[];
+  executiveSummary: string;
+  staffingTable: StaffingFTE[];
+  overallRisk: 'High' | 'Medium' | 'Low';
+  risks: ProjectRisk[];
+  recommendations: string[];
 }
 
 

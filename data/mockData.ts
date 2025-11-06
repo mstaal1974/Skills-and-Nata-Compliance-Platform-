@@ -25,6 +25,7 @@ export const initializeData = () => {
         { skill_id: 104, name: 'Atterberg Limits', category: 'Soils & Aggregates', isNataTestMethod: true, methodCode: 'AS 1289.3.1.2' },
         { skill_id: 105, name: 'Concrete Slump Test', category: 'Concrete (PCC)', isNataTestMethod: true, methodCode: 'AS 1012.3.1' },
         { skill_id: 106, name: 'Field Density Testing', category: 'Field & NDT', isNataTestMethod: true, methodCode: 'AS 1289.5.7.1' },
+        { skill_id: 107, name: 'Karl Fischer Titration', category: 'Titration Methods', isNataTestMethod: true, methodCode: 'ISO 29796' },
     ];
 
     const richSkills: RichSkill[] = [
@@ -176,6 +177,14 @@ export const initializeData = () => {
             evidenceUrl: 'https://app.microcredentials.io/courses/author/ABC%20Training'
         }
     ];
+    
+    const productivityBenchmarks: Record<string, number> = {
+      'Earthworks': 10,
+      'Pavement': 8,
+      'Concrete': 10,
+      'Asphalt': 8,
+      'Drainage': 10
+    };
 
     return {
         skills,
@@ -192,5 +201,6 @@ export const initializeData = () => {
         developmentPlans,
         openBadges,
         _pendingBadges,
+        productivityBenchmarks,
     };
 };
